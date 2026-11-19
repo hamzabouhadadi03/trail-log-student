@@ -6,9 +6,13 @@ Branche : `fix/m4-debugging` (créée depuis `m4-student`).
 
 - Build : `gradlew.bat clean assembleDebug testDebugUnitTest` → **BUILD SUCCESSFUL**. `app-debug.apk` est généré.
 - Tests unitaires : 6/6 réussis (`TrailTest` : 3, `TrailFormatterTest` : 3).
-- **Pas de vérification sur l'émulateur.** L'AVD `Medium_Phone_API_37.0` existe, mais l'émulateur refuse de démarrer :
-  `FATAL | Your device does not have enough disk space to run avd`. Il ne reste qu'environ 1,8 Go sur C:.
-  Les étapes manuelles des labs (Logcat, breakpoint, persistance après redémarrage) restent donc à faire dans Android Studio.
+- **Vérification sur émulateur :** AVD `Medium_Phone_API_37.0` (API 37). L'APK `app-debug.apk`, construit depuis
+  le commit des corrections, a été installé avec `adb install -r`. L'application a été pilotée avec `adb`
+  (`input`, `uiautomator dump`) et Logcat a été lu avec `adb logcat -s TrailLogSave AndroidRuntime:E`.
+  Le catalogue importé se charge (Sentier 01 à 09…). Aucun crash `AndroidRuntime` n'a été observé.
+  Captures d'écran : `docs/m4/`.
+- **Non fait :** la session de debug avec breakpoint dans Android Studio (Step Over, Resume, Variables). Les valeurs
+  indiquées pour le Lab 2 viennent de la lecture du code et des tests, pas d'une session de débogueur.
 - Note de configuration : le premier build échouait avec `SDK location not found`. J'ai créé un fichier `local.properties`
   (`sdk.dir=C:/Users/Hassan/AppData/Local/Android/Sdk`). Ce fichier est ignoré par git et n'est pas commité.
 
@@ -25,8 +29,14 @@ Branche : `fix/m4-debugging` (créée depuis `m4-student`).
 - **Correction :** suppression de ce bloc uniquement. Les contrôles légitimes restent en place : nom vide,
   distance nulle, non finie ou négative, dénivelé nul ou négatif.
 - **Fichier modifié :** `app/src/main/java/fr/estiam/traillog/ui/EditTrailActivity.kt`. Test ajouté dans `app/src/test/.../model/TrailTest.kt`.
-- **Vérification :** les tests du modèle passent (750 m et 250 m valides, -1 m invalide). Le test UI (sauvegarde,
-  puis arrêt forcé et réouverture) n'a pas été fait faute d'émulateur.
+- **Vérification :**
+  - Tests unitaires : 750 m et 250 m sont valides, -1 m est invalide.
+  - Émulateur : « Mountain Test », 8.0 km, 750 m est **enregistré** et apparaît dans la liste. Aucune ligne
+    `TrailLogSave` dans Logcat. « Mountain Test 250 », 8.0 km, 250 m est aussi enregistré.
+  - Après `am force-stop` et réouverture, les deux trails sont toujours présents (persistance Room). Le détail
+    affiche « Mountain Test », « 8.0 km », « ↑ 750 m » (`docs/m4/lab1_detail.png`).
+  - Contrôle de non-régression : la sauvegarde avec un nom vide est toujours refusée
+    (Snackbar « Enter a name and non-negative numbers »).
 
 ## Lab 2 – Conversion km vers miles
 
@@ -46,6 +56,11 @@ Branche : `fix/m4-debugging` (créée depuis `m4-student`).
   La valeur `distanceKm` persistée (Room) et la branche KM ne changent pas.
 - **Fichier modifié :** `app/src/main/java/fr/estiam/traillog/model/UserSettings.kt`. Test ajouté :
   `app/src/test/.../model/TrailFormatterTest.kt`.
-- **Vérification :** les tests unitaires passent (10.0 km donne « 6.2 mi », 10.0 km reste « 10.0 km », 0 km donne « 0.0 mi »).
-  La vérification visuelle de la liste et du détail, ainsi que celle de la préférence d'unité après redémarrage,
-  n'a pas été faite faute d'émulateur.
+- **Vérification :**
+  - Tests unitaires : 10.0 km donne « 6.2 mi », 10.0 km reste « 10.0 km », 0 km donne « 0.0 mi ».
+  - Émulateur, unité MI : un trail « Ten Km Test » de 10.0 km affiche **6.2 mi** dans la liste et dans le détail
+    (`docs/m4/lab2_list_mi.png`, `docs/m4/lab2_detail_mi.png`). Autres valeurs de la liste : 3.6 km donne 2.2 mi,
+    4.9 km donne 3.0 mi, 8.0 km donne 5.0 mi, 9.0 km donne 5.6 mi, 10.3 km donne 6.4 mi.
+  - Après `am force-stop` et réouverture, Settings affiche toujours « MI » (préférence DataStore conservée).
+  - Retour à l'unité KM : la liste et le détail affichent de nouveau « 10.0 km ». La valeur `distanceKm` stockée
+    n'a pas changé.
